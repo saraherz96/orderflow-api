@@ -36,7 +36,26 @@ reproduced from the screen.
 npm run typecheck
 npm test
 npm run build:ui
+npm run verify:patch
 ```
+
+## Verificacion automatica de parches
+
+El workflow `.github/workflows/verify-patch.yml` se ejecuta en cada Pull
+Request y tambien puede iniciarse manualmente desde GitHub Actions. Ejecuta
+las pruebas, el typecheck y el build de la interfaz, publica un resumen en la
+ejecucion y sube `patch-report.json` como artifact para que Signal Patch lo
+consuma mediante las APIs de Actions y Artifacts.
+
+Para reproducirlo localmente:
+
+```bash
+npm run verify:patch
+```
+
+El comando devuelve codigo `0` solo cuando todos los checks pasan. En la rama
+defectuosa `demo/signal-patch-missing-deposit` debe devolver `1`; despues de
+aplicar el parche, debe devolver `0`.
 
 ## Endpoints
 
