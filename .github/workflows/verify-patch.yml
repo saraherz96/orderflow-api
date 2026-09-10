@@ -22,11 +22,19 @@ jobs:
         env:
           PATCH_CODE: ${{ inputs.patch_code }}
         run: |
-          node --input-type=module -e "import { writeFileSync } from 'node:fs'; const declaration = 'declare const Order: { findById: (id: string) => Promise<{ status: string; depositAmount: number; save: () => Promise<void> } | null>; };\n\n'; writeFileSync('verification/candidate.ts', declaration + process.env.PATCH_CODE + '\n\nexport { confirmOrder };\n');"
+          node --input-type=module <<'NODE'
+          import { mkdirSync, writeFileSync } from "node:fs";
+
+          mkdirSync("verification", { recursive: true });
+          writeFileSync(
+            "verification/candidate.ts",
+            `${process.env.PATCH_CODE}\n`,
+          );
+          NODE
       - run: npm run verify:patch
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: patch-report
-          path: verification/patch-report.json
+          path: patch-report.json
           if-no-files-found: error
