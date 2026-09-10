@@ -1,0 +1,32 @@
+name: Verify Signal Patch
+
+on:
+  workflow_dispatch:
+    inputs:
+      patch_code:
+        description: Proposed function body
+        required: true
+        type: string
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Apply proposed patch to the isolated candidate
+        env:
+          PATCH_CODE: ${{ inputs.patch_code }}
+        run: |
+          node --input-type=module -e "import { mkdirSync, writeFileSync } from 'node:fs'; mkdirSync('verification', { recursive: true }); writeFileSync('verification/candidate.ts', process.env.PATCH_CODE + '\n');"
+      - run: npm run verify:patch
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: patch-report
+          path: patch-report.json
+          if-no-files-found: error
