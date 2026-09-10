@@ -22,43 +22,11 @@ jobs:
         env:
           PATCH_CODE: ${{ inputs.patch_code }}
         run: |
-          node --input-type=module <<'NODE'
-          import { readFileSync, writeFileSync } from "node:fs";
-
-          const sourcePath = "src/order-service.ts";
-          const source = readFileSync(sourcePath, "utf8");
-          const candidate = process.env.PATCH_CODE.trim();
-          const functionStart = source.indexOf("export async function confirmOrder");
-          const bodyStart = source.indexOf("{", functionStart);
-          let depth = 0;
-          let bodyEnd = -1;
-
-          for (let index = bodyStart; index < source.length; index += 1) {
-            if (source[index] === "{") depth += 1;
-            if (source[index] === "}") depth -= 1;
-            if (depth === 0) {
-              bodyEnd = index + 1;
-              break;
-            }
-          }
-
-          if (functionStart < 0 || bodyStart < 0 || bodyEnd < 0) {
-            throw new Error("Could not locate confirmOrder in src/order-service.ts");
-          }
-
-          const replacement = candidate.includes("export async function confirmOrder")
-            ? candidate
-            : `${source.slice(functionStart, bodyStart + 1)}\n${candidate}\n}`;
-
-          writeFileSync(
-            sourcePath,
-            `${source.slice(0, functionStart)}${replacement}${source.slice(bodyEnd)}`,
-          );
-          NODE
+          node --input-type=module -e "import { writeFileSync } from 'node:fs'; const declaration = 'declare const Order: { findById: (id: string) => Promise<{ status: string; depositAmount: number; save: () => Promise<void> } | null>; };\n\n'; writeFileSync('verification/candidate.ts', declaration + process.env.PATCH_CODE + '\n\nexport { confirmOrder };\n');"
       - run: npm run verify:patch
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: patch-report
-          path: patch-report.json
+          path: verification/patch-report.json
           if-no-files-found: error
